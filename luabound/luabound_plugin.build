@@ -1,0 +1,59 @@
+-- Premake5 Build Script For Luabound Plugin
+-- Copyright (c) Sean Moss 2017
+-- Licensed under the GNU GPL v3 license, the text of which can be found in the LICENSE file in
+--     this repository.
+
+
+-- Add the plugin file option
+newoption {
+	trigger = "pfile",
+	value = "plugin_file",
+	description = "The plugin file to load the plugin information from."
+}
+
+local OUTPUT_FILE_NAME = ""
+local INPUT_FILES = { }
+-- Functon to actually load the files
+local plugin_file = "./plugin/" .. (_OPTIONS["pfile"] or "default.txt")
+local load_files = function()
+	-- Check if it exists
+	local file = io.open(plugin_file, "r")
+	if file then file:close() end
+	if file == nil then
+		print("Error: plugin file " .. plugin_file .. " does not exist.")
+		os.exit()
+	end
+	-- Load in info
+	local file_lines = {}
+	for line in io.lines(plugin_file) do
+		file_lines[#file_lines + 1] = line
+	end
+	for i, line in ipairs(file_lines) do
+		if i == 1 then
+			OUTPUT_FILE_NAME = line
+		else
+			INPUT_FILES[#INPUT_FILES + 1] = "./plugin/" .. line
+		end
+	end
+end
+
+-- Create the workspace
+workspace "LuaboundPlugin"
+	language "C++"
+	location "BUILD_PLUGIN"
+	targetdir "OUT"
+
+	configurations { "basic" }
+
+	includedirs { "./extlib/include", "./extlib/rebound" }
+
+
+-- Create the project
+project "LuaboundPlugin"
+	kind "SharedLib"
+	flags { "C++14" }
+	optimize "Speed"
+	buildoptions { "-fPIC" }
+	load_files()
+	targetname (OUTPUT_FILE_NAME)
+	files (INPUT_FILES)

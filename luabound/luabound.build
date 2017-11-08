@@ -1,0 +1,101 @@
+-- Premake5 Build Script For Luabound
+-- Copyright (c) Sean Moss 2017
+-- Licensed under the GNU GPL v3 license, the text of which can be found in the LICENSE file in
+--     this repository.
+
+
+-- Setup some platform specific items
+local LUA_PLATFORM_INCLUDE_PATH = ""
+local LUA_PLATFORM_LINK_NAME = ""
+local GL_PLATFORM_LINK_NAME = ""
+local GLFW_PLATFORM_LINK_NAME = ""
+if _OS == "linux" then
+	LUA_PLATFORM_INCLUDE_PATH = "./extlib/include/lua_linux"
+	LUA_PLATFORM_LINK_NAME = "lua5.3"
+	GL_PLATFORM_LINK_NAME = "GL"
+	-- GLFW_PLATFORM_LINK_NAME = "glfw"
+elseif _OS == "macosx" then
+	LUA_PLATFORM_INCLUDE_PATH = "./extlib/include/lua_mac"
+	LUA_PLATFORM_LINK_NAME = "lua53"
+	GL_PLATFORM_LINK_NAME = "OpenGL.framework"
+	-- GLFW_PLATFORM_LINK_NAME = "glfw"
+end
+
+
+-- Create the workspace 
+workspace "Luabound"
+	language "C++"
+	location "BUILD"
+	targetdir "OUT"
+
+	-- basic=no opengl or openmp, vis=only opengl, omp=only openmp, visomp=opengl and openmp
+	configurations { "basic", "vis", "omp", "visomp" }
+
+	includedirs { "./extlib/include", "./extlib/rebound", "./src", LUA_PLATFORM_INCLUDE_PATH }
+	libdirs { "./extlib/lib" }
+	filter "system:macosx"
+		libdirs { "./extlib/lib/lua_mac" }
+
+
+-- This is the makefile project for the Rebound source code
+project "rebound-source"
+	kind "Utility"
+	filter "configurations:basic"
+		prebuildcommands {
+			"mkdir -p ../extlib/lib",
+			"(cd ../extlib/rebound && exec make OPENGL=0 OPENMP=0)",
+			"cp -f ../extlib/rebound/librebound.a ../extlib/lib/librebound.a",
+			"(cd ../extlib/rebound && exec make clean)"
+		}
+	filter "configurations:vis"
+		prebuildcommands {
+			"mkdir -p ../extlib/lib",
+			"(cd ../extlib/rebound && exec make OPENGL=1 OPENMP=0)",
+			"cp -f ../extlib/rebound/librebound.a ../extlib/lib/libreboundv.a",
+			"(cd ../extlib/rebound && exec make clean)"
+		}
+	filter "configurations:omp"
+		prebuildcommands {
+			"mkdir -p ../extlib/lib",
+			"(cd ../extlib/rebound && exec make OPENGL=0 OPENMP=1)",
+			"cp -f ../extlib/rebound/librebound.a ../extlib/lib/libreboundm.a",
+			"(cd ../extlib/rebound && exec make clean)"
+		}
+	filter "configurations:visomp"
+		prebuildcommands {
+			"mkdir -p ../extlib/lib",
+			"(cd ../extlib/rebound && exec make OPENGL=1 OPENMP=1)",
+			"cp -f ../extlib/rebound/librebound.a ../extlib/lib/libreboundvm.a",
+			"(cd ../extlib/rebound && exec make clean)"
+		}
+
+
+-- Project for the luabound application itself
+project "luabound"
+	kind "ConsoleApp"
+	dependson { "rebound-source" }
+	links { LUA_PLATFORM_LINK_NAME, "dl" }
+	flags { "C++14" }
+	optimize "Speed"
+
+	-- Add files
+	files { "src/**.cpp" }
+
+	-- Setup proper linkage for rebound, and output file suffix
+	-- TODO: May remove the different suffixes eventually
+	filter "configurations:basic"
+		links { "rebound" }
+		targetsuffix ""
+	filter "configurations:vis"
+		links { "reboundv", GL_PLATFORM_LINK_NAME, "glfw" }
+		targetsuffix "v"
+		filter { "configurations:vis", "system:macosx" }
+			links { "Cocoa.framework", "IOKit.framework", "CoreVideo.framework" }
+	filter "configurations:omp"
+		links { "reboundm", "gomp", "pthread" }
+		targetsuffix "m"
+	filter "configurations:visomp"
+		links { "reboundvm", GL_PLATFORM_LINK_NAME, "glfw", "gomp", "pthread" }
+		targetsuffix "vm"
+		filter { "configurations:vis", "system:macosx" }
+			links { "Cocoa.framework", "IOKit.framework", "CoreVideo.framework" }

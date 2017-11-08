@@ -1,0 +1,105 @@
+-- This file is part of the ReboundU project, and is licensed under the GNU GPL v3 license, the text of which can be 
+--     found in the LICENSE file distributed with the ReboundU source code, or online at 
+--     <https://opensource.org/licenses/GPL-3.0>. In the event of redistruction of this code, this header, or the 
+--     text of the license itself, must not be removed from the source files.
+-- Copyright © 2017 Sean Moss
+
+
+-- Platform-specific paths and other settings
+local GL_PLATFORM_LINK_NAME = ""
+local GLFW_PLATFORM_LINK_NAME = "glfw"
+if _OS == "linux" then
+	GL_PLATFORM_LINK_NAME = "GL"
+elseif _OS == "macosx" then
+	GL_PLATFORM_LINK_NAME = "OpenGL.framework"
+end
+
+
+-- ReboundU Workspace
+workspace "ReboundU"
+	language "C++"
+	location "BUILD"
+	targetdir "OUT"
+
+	-- basic=no opengl or openmp, gl=only opengl, mp=only openmp, full=opengl and openmp
+	configurations { "basic", "gl", "mp", "full" }
+
+
+-- Rebound Source Code
+project "rebound-source"
+	kind "Utility"
+	filter { "configurations:basic" }
+		prebuildcommands {
+			"mkdir -p ../rebound/bin",
+			"(cd ../rebound && exec make OPENGL=0 OPENMP=0)",
+			"cp -f ../rebound/librebound.a ../rebound/bin/",
+			"(cd ../rebound && exec make clean)"
+		}
+	filter { "configurations:gl" }
+		prebuildcommands {
+			"mkdir -p ../rebound/bin",
+			"(cd ../rebound && exec make OPENGL=1 OPENMP=0)",
+			"cp -f ../rebound/librebound.a ../rebound/bin/",
+			"(cd ../rebound && exec make clean)"
+		}
+	filter { "configurations:mp" }
+		prebuildcommands {
+			"mkdir -p ../rebound/bin",
+			"(cd ../rebound && exec make OPENGL=0 OPENMP=1)",
+			"cp -f ../rebound/librebound.a ../rebound/bin/",
+			"(cd ../rebound && exec make clean)"
+		}
+	filter { "configurations:full" }
+		prebuildcommands {
+			"mkdir -p ../rebound/bin",
+			"(cd ../rebound && exec make OPENGL=1 OPENMP=1)",
+			"cp -f ../rebound/librebound.a ../rebound/bin/",
+			"(cd ../rebound && exec make clean)"
+		}
+	filter {}
+
+
+-- ReboundU Project
+project "ReboundU"
+	kind "StaticLib"
+	flags { "C++11" }
+	optimize "Speed"
+	dependson { "rebound-source" }
+	targetname "reboundu"
+
+	includedirs { "./rebound", "./include" }
+	libdirs { "./rebound/bin" }
+	links { "rebound" }
+
+	files { "src/**.cpp" }
+
+	filter { "configurations:gl or full" }
+		links { GL_PLATFORM_LINK_NAME, GLFW_PLATFORM_LINK_NAME }
+	filter { "system:macosx", "configurations:gl or full" }
+		links { "Cocoa.framework", "IOKit.framework", "CoreVideo.framework" }
+	filter { "configurations:mp or full" }
+		links { "gomp", "pthread" }
+	filter {}
+
+
+-- Test Executable Project
+project "Tester"
+	kind "ConsoleApp"
+	flags { "C++11" }
+	optimize "Speed"
+	dependson { "rebound-source", "ReboundU" }
+	targetname "tester"
+
+	includedirs { "./rebound", "./include" }
+	libdirs { "./rebound/bin" }
+	links { "rebound", "reboundu" }
+
+	files { "test/**.cpp" }
+
+	filter { "configurations:gl or full" }
+		links { GL_PLATFORM_LINK_NAME, GLFW_PLATFORM_LINK_NAME }
+	filter { "system:macosx", "configurations:gl or full" }
+		links { "Cocoa.framework", "IOKit.framework", "CoreVideo.framework" }
+	filter { "configurations:mp or full" }
+		links { "gomp", "pthread" }
+	filter {}

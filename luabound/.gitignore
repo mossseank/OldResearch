@@ -1,0 +1,19 @@
+# Ignore user .vscode folder
+.vscode/
+
+# Ignore compilation output for rebound source
+extlib/rebound/*.o
+extlib/rebound/*.a
+
+# Ignore rebound libraries that have been moved to /extlib/lib
+extlib/lib/librebound*
+
+# Ignore premake-generated build files
+BUILD/
+BUILD_PLUGIN/
+
+# Ignore built output binaries
+OUT/
+
+# Ignore python cache files generated from testing the python parser script
+python/__pycache__/

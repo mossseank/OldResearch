@@ -1,0 +1,83 @@
+These are some notes on how different machine learning algorithms work
+Terms:
+	- Features: The set of input variables that define the object to be classified/learned
+	- Class/Classification: The output group of an object based on the algortihm examining its features
+	- Learning Set: The set of input objects used to train each algortihm before classification begins
+	- Annotated Objects: Objects in a learning set are annotated if their classifications are provided before learning
+
+
+Overview Steps:
+	- One or more learning sets are provided to the algorithm to teach it how to make classifications
+		- Some algorithms require annotated learning sets, others can try to discern classifications from their learning sets
+	- Individual unclassified objects (potentially from the unannotated learning set) are fed into the algorithm
+	- For each input object, a probable classification is returned by analyzing the features against the learned data
+		- Some algorithms support uncertainty in classification as well
+
+
+1. Logistic Regression (LR)
+	- Uses a logarithmic (logit/probit) function for probability values, split at 0.5 for binary classification
+	- Examines the effect of multiple features on a binary (two-valued) output variable
+	- Features should be as independent from each other as possible, but some correllation can be tolerated with minor effect
+
+2. Linear Discriminant Analysis (LDA)
+	- Represents each feature set as a linear combination of values (like vectors), and groups them based on relative distance
+	- Often used to reduce the dimensionality of the features before further analysis takes place
+	- Assumes that features are continuous to a high degree, and are normally distributed
+
+3. K-Nearest Neighbors (KNN)
+	- Checks for the k (integer) nearest neighbors in feature-space, classifies the set as whichever neighbor class appears the most
+	- Among the simplest of all machine learning algorithms
+	- Very sensitive to small-scale fluctuations in feature-space
+	- Works best for low-dimensionality feature spaces, high-dimensionality spaces can lose their meaning (no vectors close)
+	- Often used as the followup algorithm after LDA reduction is used on the feature set
+
+4. Classification and Regression Trees (CART)
+	- The values of the features are the branches of the tree, with the classifications being the leaves
+	- A regression tree is a classification tree where the output value can take on a continuous set of values
+	- The tree is learned by splitting the feature set into subsets recursively, based on different variables
+		- Similar to a recursive LDA (-ish)
+
+5. Gaussian Naive Bayes Classifiers (gNB)
+	- Applies Bayes' Theorem to features to calculate probabilities of each feature being certain classifications
+		- P(A|B) = P(B|A) * P(A) / P(B)
+	- Assumes strong independence of the features (hence the "naive" name)
+	- Scales linearly, good for feature sets with high dimensionality
+	- Given k classifications C_k and n features in a vector X = (x_1, x_2, ..., x_n):
+		- Calculates P(C_k | X) = P(C_k) * P(X | C_k) / P(X), takes highest classification probability
+		- With string feature independence, P(C_k | X) = P(C_k) * P(x_1 | C_k) * P(x_2 | C_k) * ... * P(x_n | C_k)
+	- In gNB, the probability function is a normal distribution using the mean and variance of each feature in the test classification
+
+6. Support Vector Machines (SVM)
+	- Analyzes the learning groups and remaps the features to physical spaces that more strongly separate the groups
+		- Then generates iso-surfaces to separate the groups, classification is done by matching against these iso-surfaces
+		- Different SVM algorithms will use different iso-surfaces (hyperplane = linear, ect...)
+		- Multiple isosurfaces can be generated to indicate level of confidence for classifications
+	- Very powerful at classification of images
+	- Requires fully annotated learning sets to work properly (although SV clustering can group non-annotated sets)
+	- Only directly supports binary classes, but can be extended to support multi-class systems (called MCSVM)
+	- Probably going to use non-linear SVM for this project
+
+
+Discussion Points:
+	- Introduce the concept of machine learning
+		- Explain terms above
+		- Splits input up into feature space, algorithms differ in how they classify feature space
+		- Explain difference between learning sets and input sets
+		- Introduce the iris data, and how it applies to the above topics
+		- Show plots of different algorithms
+	- Introduce profile generation
+		- Using OpenGL to quickly generate profiles
+		- Explain the difference between photometric and redshift profiles in this context
+		- Evolve a 1000 particle eccentric disk in rebound for a few orbital periods
+			- Save orbital information, lightweight dataset for building orbits to pass to OpenGL
+		- Explain the view datacube
+		- Explain equivalent timesteps and step count scaling using mean anomaly
+			- T ~ a^(3/2):  a=1 T=1, a=2 T=2.828, a=0.5 T=0.354   ->   a=1 dT=1000, a=2 dT=2828, a=0.5 dT=354
+			- Ask about brightness scaling:
+				- Equal brightness -> Higher integrated intensity for longer orbits
+				- Brightness ~ Orbit Period -> All orbits have same integrated intensity
+	- How to feed generated profiles into algorithm
+		- Not quite sure yet
+		- Scikit Learn does support directly feeding images in, will have to test further (digits dataset)
+		- Other option is to classify images as a set of features, and directly feed the feature set into the ml
+			- Lots of work, and kind of destroys the whole point of using machine learning

@@ -1,0 +1,12 @@
+# Ignore the intermediate and final generated output files
+BUILD/
+OUT/
+
+# Ignore the install directory
+INSTALL/
+
+# Ignore the generated files for rebound
+rebound/bin
+
+# Ignore IDE files
+\.vscode/

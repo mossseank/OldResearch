@@ -1,0 +1,7 @@
+## Rebound Source Code
+
+This directory contains the rebound C code taken directly from the master branch of the main repository for Rebound. The only change made from the original files is to change the Makefile to build Rebound as a static library instead of a shared library. There are no changes made to the C code.
+
+The source code is included instead of pre-built binaries because of how Rebound takes advantage of processor specific extensions. Specifically, the compiler uses the `-march=native` flag, which allows the library to be optimized for the exact processor extension set that it was compiled on. While this makes the library run as fast as possible on the given processor, it makes it very unlikely to run properly on any processors that differ even slightly. While this increases the compile time, and makes it so the Luabound application must be recompiled on each individual computer using it, it does provide the most optimized experience for each user.
+
+Until a better solution is made, this code is manually updated from the main repository for Rebound, taken directly from the `src/` folder where the C code lives. This new code should be brought in **only** when a new official version is commited. Please make a new commit that only contains the new Rebound code when this happens. Explicitly state in the commit what Rebound version is being added, and the 7 character hash identifier of the commit from the Rebound repository.
